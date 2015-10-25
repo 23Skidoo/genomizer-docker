@@ -1,0 +1,16 @@
+sudo: required
+dist: trusty
+
+services:
+  - docker
+
+apt:
+  packages:
+    - expect
+
+before_script:
+  - docker info
+
+script:
+  - ./genomizer-admin deploy
+  - docker ps

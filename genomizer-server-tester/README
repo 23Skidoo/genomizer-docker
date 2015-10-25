@@ -1,0 +1,10 @@
+To get the server tester container up and running (assuming that the database
+and the server already are):
+
+$ docker build -t genomizer/server-tester .
+
+$ docker run -d -P \
+        -v `pwd`/genomizer-server-tester.jar:/genomizer-server-tester.jar \
+        --name=genomizer-server-tester \
+        --link genomizer-server:genomizer \
+        genomizer/server-tester
