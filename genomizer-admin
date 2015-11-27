@@ -165,8 +165,8 @@ class Configuration(object):
         self.cpu = json_server[0]["HostConfig"]["CpuShares"]
         self.cpu = (self.cpu if not self.cpu == 0 else -1)
         binds = parse_binds(json_server)
-        self.tmp = binds["/data"]
-        self.data = binds["/tmp"]
+        self.tmp = binds["/tmp"]
+        self.data = binds["/data"]
 
         json_nginx = get_json("nginx")
         binds = parse_binds(json_nginx)
