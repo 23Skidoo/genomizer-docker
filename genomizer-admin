@@ -614,115 +614,120 @@ def debug_cmd(args, conf):
 def parse_args():
     "Parse command-line arguments."
 
-    def add_target_argument(parser):
-        parser.add_argument(
-            "target", nargs="?", default="production",
-            choices=["production", "web", "client", "dev1", "dev2", "dev3"],
-            help="target configuration (default: 'production')")
-
     parser = argparse.ArgumentParser(
-        description="Automates Genomizer server deployment and backup."
-        ,epilog=("Server instance can be one of: "
-                 "production (default), web, client, dev1, dev2, dev3."))
-    parser_ = parser
+        description="Automates Genomizer server deployment and backup.",
+        epilog=("Server instance can be one of: "
+                "production (default), web, client, dev1, dev2, dev3."))
 
     parser.add_argument("-v", "--verbose", action='store_true'
                         , help="toggle verbose output")
 
     subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
 
-    parser_install_prereqs = subparsers.add_parser(
-        "install-prereqs"
-        , help="Install software required for this script to work")
-    parser_install_prereqs.set_defaults(func=install_prereqs)
+    def add_target_argument(parser):
+        parser.add_argument(
+            "target", nargs="?", default="production",
+            choices=["production", "web", "client", "dev1", "dev2", "dev3"],
+            help="target configuration (default: 'production')")
 
-    parser_deploy = subparsers.add_parser(
-        "deploy", help="Deploy the given server configuration")
-    parser_deploy.add_argument("-p", "--port", type=int,
-                               help="port to listen on (HTTPS)")
-    parser_deploy.add_argument("--http-port", type=int,
-                               help="port to listen on (HTTP)")
-    parser_deploy.add_argument("--server-port", type=int,
-                               help="port to listen on (Server)")
-    parser_deploy.add_argument("-t", "--tmp", type=str,
-                               help="path to temp directory")
-    parser_deploy.add_argument("-d", "--data", type=str,
-                               help="path to data directory")
-    parser_deploy.add_argument("-c", "--cert", type=str,
-                               help="path to the certs directory")
-    parser_deploy.add_argument("--cpu", type=int,
-                               help="CPU limit")
-    parser_deploy.add_argument("--ram", type=int,
-                               help="RAM limit")
-    # parser_deploy.add_argument("-r", "--restore", type=str,
-    #                            help="Restore database from a backup")
-    add_target_argument(parser_deploy)
-    parser_deploy.set_defaults(func=deploy)
+    def add_subcommand(name, help, func,
+                       add_args=lambda x:None, target_arg=True):
+        subparser = subparsers.add_parser(name, help=help)
+        add_args(subparser)
+        if target_arg:
+            add_target_argument(subparser)
+        subparser.set_defaults(func=func)
+        return subparser
 
-    parser_info = subparsers.add_parser(
-        "info",
-        help="Print information about deployed server instances")
-    add_target_argument(parser_info)
-    parser_info.set_defaults(func=info)
+    add_subcommand("install-prereqs",
+                   help="Install software required for this script to work",
+                   func=install_prereqs, target_arg=False)
 
-    parser_stop = subparsers.add_parser(
-        "stop", help="Stop a running server instance")
-    add_target_argument(parser_stop)
-    parser_stop.set_defaults(func=stop)
+    def deploy_args(parser_deploy):
+        parser_deploy.add_argument("-p", "--port", type=int,
+                                   help="port to listen on (HTTPS)")
+        parser_deploy.add_argument("--http-port", type=int,
+                                   help="port to listen on (HTTP)")
+        parser_deploy.add_argument("--server-port", type=int,
+                                   help="port to listen on (Server)")
+        parser_deploy.add_argument("-t", "--tmp", type=str,
+                                   help="path to temp directory")
+        parser_deploy.add_argument("-d", "--data", type=str,
+                                   help="path to data directory")
+        parser_deploy.add_argument("-c", "--cert", type=str,
+                                   help="path to the certs directory")
+        parser_deploy.add_argument("--cpu", type=int,
+                                   help="CPU limit")
+        parser_deploy.add_argument("--ram", type=int,
+                                   help="RAM limit")
+    add_subcommand("deploy",
+                   help="Deploy the given server configuration",
+                   func=deploy, add_args=deploy_args)
 
-    parser_start = subparsers.add_parser(
-        "start", help="Start a stopped server instance")
-    add_target_argument(parser_start)
-    parser_start.set_defaults(func=start)
+    add_subcommand("info",
+                   help="Print information about deployed server instances",
+                   func=info)
 
-    parser_restart = subparsers.add_parser(
-        "restart", help="Restart a running server instance")
-    add_target_argument(parser_restart)
-    parser_restart.set_defaults(func=restart)
+    add_subcommand("stop",
+                   help="Stop a running server instance",
+                   func=stop)
 
-    parser_backup = subparsers.add_parser(
-        "backup", help="Backup a running server instance")
-    parser_backup.add_argument("-o", "--output", type=str,
-                               help="path to output directory")
-    add_target_argument(parser_backup)
-    parser_backup.set_defaults(func=backup)
+    add_subcommand("start",
+                   help="Start a stopped server instance",
+                   func=start)
 
-    parser_destroy = subparsers.add_parser(
-        "destroy", help="Stop and remove a running server instance")
-    add_target_argument(parser_destroy)
-    parser_destroy.set_defaults(func=destroy)
+    add_subcommand("restart",
+                   help="Restart a running server instance",
+                   func=restart)
 
-    parser_shell = subparsers.add_parser(
-        "shell", help="Attach a shell to a running server instance")
-    parser_shell.add_argument(
-        "-c", "--container", choices=["server", "postgres", "nginx"],
-        default="server",
-        help="choose which container to attach to (default:server)")
-    add_target_argument(parser_shell)
-    parser_shell.set_defaults(func=shell_cmd)
+    def backup_args(parser_backup):
+        parser_backup.add_argument("-o", "--output", type=str,
+                                   help="path to output directory")
+    add_subcommand("backup",
+                   help="Backup a running server instance",
+                   func=backup,
+                   add_args=backup_args)
 
-    parser_logs = subparsers.add_parser(
-        "logs", help="Show logs from a running server instance")
-    parser_logs.add_argument(
-        "-c", "--container", choices=["server", "postgres", "nginx"],
-        default="server",
-        help="choose which container to attach to (default:server)")
-    add_target_argument(parser_logs)
-    parser_logs.set_defaults(func=logs)
+    add_subcommand("destroy",
+                   help="Stop and remove a running server instance",
+                   func=destroy)
 
-    parser_debug = subparsers.add_parser(
-        "debug", help="Run a debugging shell (advanced)")
-    add_target_argument(parser_debug)
-    parser_debug.set_defaults(func=debug_cmd)
+    def shell_args(parser_shell):
+        parser_shell.add_argument(
+            "-c", "--container", choices=["server", "postgres", "nginx"],
+            default="server",
+            help="choose which container to attach to (default:server)")
+    add_subcommand("shell",
+                   help="Attach a shell to a running server instance",
+                   func=shell_cmd, add_args=shell_args)
 
-    parser_help = subparsers.add_parser(
-        "help", help="Show the help message for the given command")
-    parser_help.add_argument(
-        "cmd", help="command name", nargs='?', default="",
-        choices=[c for c in subparsers.choices] + [""])
-    lcls = locals()
-    parser_help.set_defaults(
-        func=lambda args : lcls["parser_"+args.cmd].print_help())
+    def logs_args(parser_logs):
+        parser_logs.add_argument(
+            "-c", "--container", choices=["server", "postgres", "nginx"],
+            default="server",
+            help="choose which container to attach to (default:server)")
+    add_subcommand("logs",
+                   help="Show logs from a running server instance",
+                   func=logs, add_args=logs_args)
+
+    add_subcommand("debug",
+                   help="Run a debugging shell (advanced)",
+                   func=debug_cmd)
+
+    def help_args(parser_help):
+        parser_help.add_argument(
+            "cmd", help="command name", nargs='?', default="",
+            choices=[c for c in subparsers.choices] + [""])
+    def print_help(args):
+        if args.cmd != '':
+            subparsers.choices[args.cmd].print_help()
+        else:
+            parser.print_help())
+    add_subcommand("help",
+                   help="Show the help message for the given command",
+                   func=print_help,
+                   add_args=help_args,
+                   target_arg=False)
 
     return parser.parse_args()
 
