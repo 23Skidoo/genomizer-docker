@@ -173,10 +173,14 @@ class Configuration(object):
         self.certdir = binds["/etc/nginx/ssl"]
 
         def lookup_port(num, json=json_nginx):
-            return int(json[0]["NetworkSettings"]
-                       ["Ports"][str(num)+"/tcp"][0]["HostPort"])
-        self.ports   = (lookup_port(7000, json_server),
-                        lookup_port(80), lookup_port(443))
+            ports = json[0]["NetworkSettings"]["Ports"]
+            portname = str(num)+"/tcp"
+            if portname in ports:
+                return int(ports[portname][0]["HostPort"])
+            else:
+                return None
+        self.ports = (lookup_port(7000, json_server),
+                      lookup_port(80), lookup_port(443))
 
     def pprint(self):
         maybe_unlimited = lambda v : "" if not v == -1 else " (unlimited)"
@@ -197,21 +201,21 @@ class Configuration(object):
             ", ".join(["%s=%r" % (k,v) for (k,v) in self.__dict__.items()]))
 
 CONFIGURATIONS = {
-    "production" : Configuration(-1, -1, (7000, 80, 443),
+    "production" : Configuration(-1, -1, (None, 80, 443),
                                  "/Data/tmp", "/Data/production-data"),
-    "dev1"       : Configuration(4000, 1, (7001, 8081, 4431),
+    "dev1"       : Configuration(4000, 1, (None, 8081, 4431),
                                  "/Data/development-1-tmp",
                                  "/Data/development-1-data"),
-    "dev2"       : Configuration(4000, 1, (7002, 8082, 4432),
+    "dev2"       : Configuration(4000, 1, (None, 8082, 4432),
                                  "/Data/development-2-tmp",
                                  "/Data/development-2-data"),
-    "dev3"       : Configuration(4000, 1, (7003, 8083, 4433),
+    "dev3"       : Configuration(4000, 1, (None, 8083, 4433),
                                  "/Data/development-3-tmp",
                                  "/Data/development-3-data"),
-    "web"        : Configuration(4000, 1, (7004, 8084, 4434),
+    "web"        : Configuration(4000, 1, (None, 8084, 4434),
                                  "/Data/development-web-tmp",
                                  "/Data/development-web-data"),
-    "client"     : Configuration(4000, 1, (7005, 8085, 4435),
+    "client"     : Configuration(4000, 1, (None, 8085, 4435),
                                  "/Data/development-client-tmp",
                                  "/Data/development-client-data")
 }
@@ -490,7 +494,7 @@ def deploy(args, conf):
         ro_paths = {"/etc/localtime":"/etc/localtime"},
         other_args = ((["-m", str(conf.ram)] if conf.ram != -1 else []) +
                       (["-c", str(conf.cpu)] if conf.cpu != -1 else [])),
-        ports = {conf.ports[0]:7000})
+        ports = ({conf.ports[0]:7000} if conf.ports[0] is not None else {}))
     start_container(
         tag = "genomizer/nginx",
         dirname = "genomizer-nginx",
@@ -649,7 +653,8 @@ def parse_args():
         parser_deploy.add_argument("--http-port", type=int,
                                    help="port to listen on (HTTP)")
         parser_deploy.add_argument("--server-port", type=int,
-                                   help="port to listen on (Server)")
+                                   help=("port to listen on "
+                                         "(Server, disabled by default)"))
         parser_deploy.add_argument("-t", "--tmp", type=str,
                                    help="path to temp directory")
         parser_deploy.add_argument("-d", "--data", type=str,
