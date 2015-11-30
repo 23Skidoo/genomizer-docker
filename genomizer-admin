@@ -175,7 +175,7 @@ class Configuration(object):
         def lookup_port(num, json=json_nginx):
             ports = json[0]["NetworkSettings"]["Ports"]
             portname = str(num)+"/tcp"
-            if ports[portname] is not None:
+            if portname in ports and ports[portname] is not None:
                 return int(ports[portname][0]["HostPort"])
             else:
                 return None
