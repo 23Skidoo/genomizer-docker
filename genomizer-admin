@@ -722,7 +722,7 @@ def parse_args():
         if args.cmd != '':
             subparsers.choices[args.cmd].print_help()
         else:
-            parser.print_help())
+            parser.print_help()
     add_subcommand("help",
                    help="Show the help message for the given command",
                    func=print_help,
