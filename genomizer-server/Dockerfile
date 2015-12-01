@@ -5,6 +5,6 @@ FROM java:7-jre
 EXPOSE 7000
 
 RUN apt-get update -y && \
-    apt-get install -y python
+    apt-get install -y python perl
 
 CMD java -jar genomizer-server.jar -debug
