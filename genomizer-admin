@@ -409,6 +409,8 @@ def deploy(args, conf):
               make_v_args(ro_paths, ":ro") +
               make_ports_args() +
               ["--net="+network_name()] +
+              ["--log-opt", "max-size=10m"] +
+              ["--log-opt", "max-file=10"] +
               other_args +
               ["--name=" + name, tag]))
         os.chdir("..")
