@@ -56,4 +56,10 @@ iptables -P FORWARD DROP
 
 # On CentOS 7, this requires installing iptables-services and disabling
 # firewalld. See http://serverfault.com/a/739465/310658.
-service iptables save
+yum list installed iptables-services > /dev/null
+if [ $? == 0 ]; then
+    service iptables save
+else
+    echo "The package 'iptables-services' is not installed! Configuration won't be persistent."
+    echo "Plese refer to 'http://serverfault.com/a/739465/310658' for instructions on how to proceed."
+fi
