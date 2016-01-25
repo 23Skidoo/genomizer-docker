@@ -53,4 +53,6 @@ iptables -P FORWARD DROP
 
 ## Save firewall rules
 
+# On CentOS 7, this requires installing iptables-services and disabling
+# firewalld. See http://serverfault.com/a/739465/310658.
 service iptables save
