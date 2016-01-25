@@ -51,7 +51,7 @@ iptables -A INPUT -j INPUT_users
 iptables -P INPUT DROP
 iptables -P FORWARD DROP
 
-## Save firewall rules
+## Make firewall rules persistent.
 
 # On CentOS 7, this requires installing iptables-services and disabling
 # firewalld. See http://serverfault.com/a/739465/310658.
